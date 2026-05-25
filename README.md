@@ -35,9 +35,11 @@ python -m playwright install chromium
 
 ## 使用
 
-### Claude Code
+CNKI MCP Server 是一个标准 MCP 服务器，支持所有兼容 MCP（Model Context Protocol）的 AI Agent 平台。
 
-在 `.claude/settings.json` 或 Claude Code 的 MCP 配置中添加：
+### OpenCode
+
+在 OpenCode 配置文件（`~/.config/opencode/config.json` 或项目 `.opencode.json`）中添加：
 
 ```json
 {
@@ -45,6 +47,98 @@ python -m playwright install chromium
     "cnki": {
       "command": "python",
       "args": ["-m", "cnki_mcp"]
+    }
+  }
+}
+```
+
+### Claude Code
+
+在 `.claude/settings.json` 中添加：
+
+```json
+{
+  "mcpServers": {
+    "cnki": {
+      "command": "python",
+      "args": ["-m", "cnki_mcp"]
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+在 Claude Desktop 配置（`~/Library/Application Support/Claude/claude_desktop_config.json`）中添加：
+
+```json
+{
+  "mcpServers": {
+    "cnki": {
+      "command": "python",
+      "args": ["-m", "cnki_mcp"]
+    }
+  }
+}
+```
+
+### Cursor
+
+在 Cursor 设置 → MCP 中添加新服务器，或编辑 `~/.cursor/mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "cnki": {
+      "command": "python",
+      "args": ["-m", "cnki_mcp"]
+    }
+  }
+}
+```
+
+### Windsurf
+
+在 `~/.codeium/windsurf/mcp_config.json` 中添加：
+
+```json
+{
+  "mcpServers": {
+    "cnki": {
+      "command": "python",
+      "args": ["-m", "cnki_mcp"]
+    }
+  }
+}
+```
+
+### VS Code / Cline
+
+在 Cline 扩展设置 → MCP Servers 中添加，或编辑 `~/AppData/Roaming/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`：
+
+```json
+{
+  "mcpServers": {
+    "cnki": {
+      "command": "python",
+      "args": ["-m", "cnki_mcp"]
+    }
+  }
+}
+```
+
+### VS Code / Continue
+
+在 Continue 配置（`~/.continue/config.json`）中添加：
+
+```json
+{
+  "experimental": {
+    "mcpServers": {
+      "cnki": {
+        "command": "python",
+        "args": ["-m", "cnki_mcp"]
+      }
     }
   }
 }
