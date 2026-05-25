@@ -21,11 +21,11 @@ from fastmcp.dependencies import CurrentContext
 from pydantic import Field
 
 from cnki_mcp.browser import AsyncBrowserPool
-from cnki_mcp.citation import format_citation_impl, SUPPORTED_STYLES
-from cnki_mcp.config import SEARCH_TYPES, SEARCH_TYPE_ALIASES, SORT_TYPES
+from cnki_mcp.citation import format_citation_impl
+from cnki_mcp.config import SEARCH_TYPES, SEARCH_TYPE_ALIASES
 from cnki_mcp.detail import get_paper_detail_impl
-from cnki_mcp.exceptions import CNKIError, CitationError, ExportError, ValidationError
-from cnki_mcp.export import export_papers_impl, SUPPORTED_FORMATS
+from cnki_mcp.exceptions import CNKIError, CitationError, ExportError
+from cnki_mcp.export import export_papers_impl
 from cnki_mcp.journals import list_categories_impl, search_journals_impl, recent_articles_impl
 from cnki_mcp.match import find_best_match_impl
 from cnki_mcp.search import search_cnki_impl
@@ -253,7 +253,7 @@ async def format_citation(
     pages: Annotated[str, Field(description="起止页码（如：1-15）")] = "",
     doi: Annotated[str, Field(description="DOI")] = "",
     style: Annotated[str, Field(
-        description=f"引文风格: gbt7714, apa, mla, chicago, vancouver"
+        description="引文风格: gbt7714, apa, mla, chicago, vancouver"
     )] = "gbt7714",
 ) -> dict:
     """

@@ -13,9 +13,8 @@ import asyncio
 import random
 from typing import Any
 
-from playwright.async_api import Page, TimeoutError as PlaywrightTimeout
+from playwright.async_api import Page
 
-from cnki_mcp.exceptions import SearchError
 from cnki_mcp.utils import dismiss_popups
 
 

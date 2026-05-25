@@ -20,7 +20,6 @@ from cnki_mcp.config import (
     SELECTOR_NEXT_PAGE,
     SORT_TYPES,
 )
-from cnki_mcp.exceptions import SearchError
 from cnki_mcp.utils import dismiss_popups, resolve_search_type, resolve_sort_type
 
 
