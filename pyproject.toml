@@ -1,5 +1,5 @@
 [project]
-name = "cnki-mcp"
+name = "cnki-mcp-server"
 version = "0.2.0"
 description = "CNKI (中国知网) MCP Server — 通过 Model Context Protocol 检索中文学术论文"
 readme = "README.md"
