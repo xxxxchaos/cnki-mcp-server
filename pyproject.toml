@@ -1,0 +1,50 @@
+[project]
+name = "cnki-mcp"
+version = "0.2.0"
+description = "CNKI (中国知网) MCP Server — 通过 Model Context Protocol 检索中文学术论文"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "CNKI MCP Contributors" },
+]
+keywords = ["cnki", "mcp", "chinese-academic", "fastmcp", "playwright", "知网"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Internet :: WWW/HTTP",
+]
+
+dependencies = [
+    "fastmcp>=2.0.0",
+    "playwright>=1.40.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.3.0",
+]
+
+[project.scripts]
+cnki-mcp = "cnki_mcp:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["cnki_mcp"]
+
+[tool.hatch.version]
+path = "cnki_mcp/__init__.py"
+
+[tool.ruff]
+line-length = 100
