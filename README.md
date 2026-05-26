@@ -45,22 +45,26 @@ python -m playwright install chromium
 
 ## 代理配置
 
-如果你的网络环境需要通过代理访问外网，请设置以下环境变量：
+如果你的网络环境需要通过代理访问外网，代码会自动读取以下环境变量：
 
 | 环境变量 | 说明 |
 |----------|------|
-| `CNKI_PROXY` | 代理地址（优先使用），如 `socks5://127.0.0.1:4781` 或 `http://127.0.0.1:4780` |
+| `CNKI_PROXY` | 代理地址（优先使用），如 `socks5://127.0.0.1:<port>` 或 `http://127.0.0.1:<port>` |
 | `HTTPS_PROXY` / `https_proxy` | 标准 HTTPS 代理地址（`CNKI_PROXY` 未设置时使用） |
 | `ALL_PROXY` / `all_proxy` | 全局代理地址（上述均未设置时使用） |
 | `CNKI_PROXY_USERNAME` / `PROXY_USERNAME` | 代理用户名（需要认证时使用） |
 | `CNKI_PROXY_PASSWORD` / `PROXY_PASSWORD` | 代理密码（需要认证时使用） |
-| `NO_PROXY` / `no_proxy` | 不走代理的域名/地址列表，逗号分隔。如 `cnki.net,*.cnki.net` |
+| `NO_PROXY` / `no_proxy` | 不走代理的域名/地址列表，逗号分隔 |
 
 > **注意**:
 > - Playwright 不支持 `socks5h://`（DNS 通过代理解析），会自动替换为 `socks5://`。
-> - 如果使用 Clash 等代理工具，建议搭配 `NO_PROXY` 排除国内网站（如 `cnki.net`），让 CNKI 走直连避免 CDN 拦截（HTTP 418）。
+> - 如果你使用 Clash 等系统代理，强烈建议用 `NO_PROXY` 排除 CNKI，让 CNKI 走直连避免 CDN 拦截。
 
-### OpenCode 示例
+### 常见场景
+
+**场景一：系统已配置全局代理，CNKI 需要直连**
+
+只需要排除 CNKI 即可，无需额外设置代理变量：
 
 ```json
 {
@@ -69,16 +73,14 @@ python -m playwright install chromium
       "command": "python",
       "args": ["-m", "cnki_mcp"],
       "env": {
-        "HTTPS_PROXY": "socks5://127.0.0.1:4781",
-        "NO_PROXY": "cnki.net,*.cnki.net",
-        "PLAYWRIGHT_HOST_PLATFORM_OVERRIDE": "ubuntu24.04-x64"
+        "NO_PROXY": "cnki.net,*.cnki.net"
       }
     }
   }
 }
 ```
 
-### Claude Code 示例
+**场景二：MCP 进程需要独立的代理配置**
 
 ```json
 {
@@ -87,7 +89,23 @@ python -m playwright install chromium
       "command": "python",
       "args": ["-m", "cnki_mcp"],
       "env": {
-        "HTTPS_PROXY": "socks5://127.0.0.1:4781",
+        "HTTPS_PROXY": "<你的代理地址>",
+        "NO_PROXY": "cnki.net,*.cnki.net"
+      }
+    }
+  }
+}
+```
+
+**场景三：新版 Ubuntu，需要指定 Playwright 平台**
+
+```json
+{
+  "mcpServers": {
+    "cnki": {
+      "command": "python",
+      "args": ["-m", "cnki_mcp"],
+      "env": {
         "NO_PROXY": "cnki.net,*.cnki.net",
         "PLAYWRIGHT_HOST_PLATFORM_OVERRIDE": "ubuntu24.04-x64"
       }
@@ -281,13 +299,12 @@ Status: 418
 server: TencentEdgeOne
 ```
 
-**原因**: CNKI 的 CDN（TencentEdgeOne）对服务器/代理 IP 做了反爬拦截。
+**原因**: CNKI 的 CDN（TencentEdgeOne）对代理/服务器 IP 做了反爬拦截。
 
 **解决方法**:
-1. 更换代理 IP 或使用住宅 IP
-2. 设置 `CNKI_PROXY` 环境变量切换到未被拦截的代理
-3. 使用 `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` 避免新版 Ubuntu 兼容问题
-4. 确保运行环境能够正常访问 `https://www.cnki.net/`
+1. 设置 `NO_PROXY=cnki.net,*.cnki.net` 让 CNKI 直连本地网络（推荐）
+2. 更换代理 IP 或使用住宅 IP
+3. 确保运行环境能够正常访问 `https://www.cnki.net/`
 
 ### 搜索框找不到（#txt_SearchText 超时）
 
