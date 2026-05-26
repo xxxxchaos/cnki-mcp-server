@@ -54,8 +54,11 @@ python -m playwright install chromium
 | `ALL_PROXY` / `all_proxy` | 全局代理地址（上述均未设置时使用） |
 | `CNKI_PROXY_USERNAME` / `PROXY_USERNAME` | 代理用户名（需要认证时使用） |
 | `CNKI_PROXY_PASSWORD` / `PROXY_PASSWORD` | 代理密码（需要认证时使用） |
+| `NO_PROXY` / `no_proxy` | 不走代理的域名/地址列表，逗号分隔。如 `cnki.net,*.cnki.net` |
 
-> **注意**: Playwright 不支持 `socks5h://`（DNS 通过代理解析），会自动替换为 `socks5://`。
+> **注意**:
+> - Playwright 不支持 `socks5h://`（DNS 通过代理解析），会自动替换为 `socks5://`。
+> - 如果使用 Clash 等代理工具，建议搭配 `NO_PROXY` 排除国内网站（如 `cnki.net`），让 CNKI 走直连避免 CDN 拦截（HTTP 418）。
 
 ### OpenCode 示例
 
@@ -66,7 +69,8 @@ python -m playwright install chromium
       "command": "python",
       "args": ["-m", "cnki_mcp"],
       "env": {
-        "CNKI_PROXY": "socks5://127.0.0.1:4781",
+        "HTTPS_PROXY": "socks5://127.0.0.1:4781",
+        "NO_PROXY": "cnki.net,*.cnki.net",
         "PLAYWRIGHT_HOST_PLATFORM_OVERRIDE": "ubuntu24.04-x64"
       }
     }
@@ -83,7 +87,8 @@ python -m playwright install chromium
       "command": "python",
       "args": ["-m", "cnki_mcp"],
       "env": {
-        "CNKI_PROXY": "socks5://127.0.0.1:4781",
+        "HTTPS_PROXY": "socks5://127.0.0.1:4781",
+        "NO_PROXY": "cnki.net,*.cnki.net",
         "PLAYWRIGHT_HOST_PLATFORM_OVERRIDE": "ubuntu24.04-x64"
       }
     }
