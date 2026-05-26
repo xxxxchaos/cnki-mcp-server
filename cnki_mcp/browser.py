@@ -50,7 +50,7 @@ def _get_proxy_settings() -> Optional[dict]:
         proxy["password"] = password
 
     # NO_PROXY 绕过列表
-    no_proxy = os.environ.get("no_proxy") or os.environ.get("NO_PROXY")
+    no_proxy = os.environ.get("NO_PROXY") or os.environ.get("no_proxy")
     if no_proxy:
         # 将 no_proxy 格式转换为 Playwright bypass 格式（逗号分隔的 glob 模式）
         bypass_list = _parse_no_proxy(no_proxy)
