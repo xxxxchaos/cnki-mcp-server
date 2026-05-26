@@ -10,6 +10,7 @@ AsyncPlaywright 浏览器池管理。
 """
 
 import asyncio
+import os
 import random
 import subprocess
 import sys
@@ -24,6 +25,60 @@ from cnki_mcp.config import (
     USER_AGENTS,
 )
 from cnki_mcp.exceptions import BrowserError
+
+
+def _get_proxy_settings() -> Optional[dict]:
+    """从环境变量读取代理配置，返回 Playwright proxy 字典"""
+    proxy_url = (
+        os.environ.get("CNKI_PROXY")
+        or os.environ.get("https_proxy")
+        or os.environ.get("HTTPS_PROXY")
+        or os.environ.get("all_proxy")
+        or os.environ.get("ALL_PROXY")
+    )
+    if not proxy_url:
+        return None
+    # Playwright 不支持 socks5h，统一替换为 socks5
+    if proxy_url.startswith("socks5h://"):
+        proxy_url = proxy_url.replace("socks5h://", "socks5://", 1)
+    username = os.environ.get("CNKI_PROXY_USERNAME") or os.environ.get("PROXY_USERNAME")
+    password = os.environ.get("CNKI_PROXY_PASSWORD") or os.environ.get("PROXY_PASSWORD")
+    proxy: dict = {"server": proxy_url}
+    if username:
+        proxy["username"] = username
+    if password:
+        proxy["password"] = password
+
+    # NO_PROXY 绕过列表
+    no_proxy = os.environ.get("no_proxy") or os.environ.get("NO_PROXY")
+    if no_proxy:
+        # 将 no_proxy 格式转换为 Playwright bypass 格式（逗号分隔的 glob 模式）
+        bypass_list = _parse_no_proxy(no_proxy)
+        if bypass_list:
+            proxy["bypass"] = ",".join(bypass_list)
+
+    return proxy
+
+
+def _parse_no_proxy(no_proxy: str) -> list[str]:
+    """解析 NO_PROXY 环境变量，返回 Playwright/Chromium 兼容的 bypass glob 列表"""
+    # NO_PROXY 格式: 逗号、空格或分号分隔的主机名/IP/CIDR
+    entries = [e.strip().strip('"').strip("'") for e in no_proxy.replace(",", " ").replace(";", " ").split()]
+    patterns: list[str] = []
+    for entry in entries:
+        if not entry:
+            continue
+        entry = entry.lstrip(".")
+        # 已经是带通配符的 glob，直接使用
+        if "*" in entry:
+            patterns.append(entry)
+        # IP 地址或 CIDR，直接使用
+        elif entry[0].isdigit():
+            patterns.append(entry)
+        # 域名，添加 * 前缀匹配所有子域
+        else:
+            patterns.append(f"*{entry}")
+    return patterns
 
 
 class AsyncBrowserPool:
@@ -45,19 +100,26 @@ class AsyncBrowserPool:
                 self._browser = None
                 self._context = None
 
+        proxy = _get_proxy_settings()
         if self._browser is None:
+            # 构建 Chromium 启动参数（含代理绕过列表）
+            chromium_args = [
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-infobars",
+                "--disable-extensions",
+            ]
+            if proxy and proxy.get("bypass"):
+                chromium_args.append(f"--proxy-bypass-list={proxy['bypass']}")
+
             try:
                 self._playwright = await async_playwright().start()
                 self._browser = await self._playwright.chromium.launch(
                     headless=True,
-                    args=[
-                        "--disable-blink-features=AutomationControlled",
-                        "--no-sandbox",
-                        "--disable-dev-shm-usage",
-                        "--disable-gpu",
-                        "--disable-infobars",
-                        "--disable-extensions",
-                    ],
+                    proxy=proxy,
+                    args=chromium_args,
                 )
             except Exception as e:
                 if "Executable doesn't exist" in str(e) or "playwright" in str(e).lower():
@@ -65,11 +127,8 @@ class AsyncBrowserPool:
                     self._playwright = await async_playwright().start()
                     self._browser = await self._playwright.chromium.launch(
                         headless=True,
-                        args=[
-                            "--disable-blink-features=AutomationControlled",
-                            "--no-sandbox",
-                            "--disable-dev-shm-usage",
-                        ],
+                        proxy=proxy,
+                        args=chromium_args,
                     )
                 else:
                     raise BrowserError(f"浏览器启动失败: {e}") from e
@@ -82,6 +141,7 @@ class AsyncBrowserPool:
                 user_agent=random.choice(USER_AGENTS),
                 viewport={"width": 1920, "height": 1080},
                 locale="zh-CN",
+                proxy=proxy,
             )
             await self._context.add_init_script("""
                 Object.defineProperty(navigator, 'webdriver', {
@@ -93,13 +153,18 @@ class AsyncBrowserPool:
         return self._browser
 
     async def _install_browser(self) -> None:
-        """安装 Playwright Chromium"""
+        """安装 Playwright Chromium（含新版 Ubuntu fallback）"""
+        env = os.environ.copy()
+        # Ubuntu 26.04+ Playwright 尚未官方支持，fallback 到 Ubuntu 24.04 的 Chromium 构建
+        if not env.get("PLAYWRIGHT_HOST_PLATFORM_OVERRIDE"):
+            env["PLAYWRIGHT_HOST_PLATFORM_OVERRIDE"] = "ubuntu24.04-x64"
         try:
             subprocess.check_call(
                 [sys.executable, "-m", "playwright", "install", "chromium"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 timeout=120,
+                env=env,
             )
         except subprocess.CalledProcessError as e:
             raise BrowserError(

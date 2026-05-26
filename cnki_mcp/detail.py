@@ -41,6 +41,13 @@ async def get_paper_detail_impl(page: Page, url: str) -> dict[str, Any]:
         # 先访问 CNKI 首页建立会话（避免直接访问抽象页触发验证码）
         await page.goto("https://www.cnki.net/", wait_until="domcontentloaded", timeout=30_000)
         await asyncio.sleep(random.uniform(1, 2))
+        # 检查是否被反爬拦截
+        homepage_content = await page.content()
+        if len(homepage_content) < 200:
+            raise DetailError(
+                "CNKI 返回了空页面，可能触发了反爬拦截（HTTP 418）。"
+                "请检查网络环境，或尝试设置 CNKI_PROXY 环境变量更换代理 IP。"
+            )
 
         await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
         await asyncio.sleep(random.uniform(1.5, 2.5))

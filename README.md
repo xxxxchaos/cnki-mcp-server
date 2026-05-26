@@ -32,6 +32,64 @@ python -m playwright install chromium
 ```
 
 > **注意**: Playwright Chromium 约 300MB，首次安装需要下载，后续无需重复安装。
+>
+> **新版 Ubuntu（26.04+）用户**: Playwright 尚未官方支持 Ubuntu 26.04，请设置环境变量后再安装 Chromium：
+> ```bash
+> PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64 python -m playwright install chromium
+> ```
+>
+> **SOCKS 代理用户**: 如果系统配置了 SOCKS 代理（`ALL_PROXY=socks5://...`），请确保安装时包含 socks 支持：
+> ```bash
+> pip install cnki-mcp-server[socks]
+> ```
+
+## 代理配置
+
+如果你的网络环境需要通过代理访问外网，请设置以下环境变量：
+
+| 环境变量 | 说明 |
+|----------|------|
+| `CNKI_PROXY` | 代理地址（优先使用），如 `socks5://127.0.0.1:4781` 或 `http://127.0.0.1:4780` |
+| `HTTPS_PROXY` / `https_proxy` | 标准 HTTPS 代理地址（`CNKI_PROXY` 未设置时使用） |
+| `ALL_PROXY` / `all_proxy` | 全局代理地址（上述均未设置时使用） |
+| `CNKI_PROXY_USERNAME` / `PROXY_USERNAME` | 代理用户名（需要认证时使用） |
+| `CNKI_PROXY_PASSWORD` / `PROXY_PASSWORD` | 代理密码（需要认证时使用） |
+
+> **注意**: Playwright 不支持 `socks5h://`（DNS 通过代理解析），会自动替换为 `socks5://`。
+
+### OpenCode 示例
+
+```json
+{
+  "mcpServers": {
+    "cnki": {
+      "command": "python",
+      "args": ["-m", "cnki_mcp"],
+      "env": {
+        "CNKI_PROXY": "socks5://127.0.0.1:4781",
+        "PLAYWRIGHT_HOST_PLATFORM_OVERRIDE": "ubuntu24.04-x64"
+      }
+    }
+  }
+}
+```
+
+### Claude Code 示例
+
+```json
+{
+  "mcpServers": {
+    "cnki": {
+      "command": "python",
+      "args": ["-m", "cnki_mcp"],
+      "env": {
+        "CNKI_PROXY": "socks5://127.0.0.1:4781",
+        "PLAYWRIGHT_HOST_PLATFORM_OVERRIDE": "ubuntu24.04-x64"
+      }
+    }
+  }
+}
+```
 
 ## 使用
 
@@ -191,6 +249,51 @@ pip install -e ".[dev]"
 python -m playwright install chromium
 pytest tests/ -v
 ```
+
+## 故障排查
+
+### Playwright 安装失败（Ubuntu 26.04+）
+
+```
+Failed to install browsers
+Error: ERROR: Playwright does not support chromium on ubuntu26.04-x64
+```
+
+**解决方法**: 设置 `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` 环境变量后重新安装。
+
+### SOCKS 代理报错
+
+```
+ImportError: Using SOCKS proxy, but the 'socksio' package is not installed.
+```
+
+**解决方法**: 安装 socks 支持 `pip install httpx[socks]`，或升级到最新版 cnki-mcp-server。
+
+### CNKI 返回 418 或空页面
+
+```
+Status: 418
+server: TencentEdgeOne
+```
+
+**原因**: CNKI 的 CDN（TencentEdgeOne）对服务器/代理 IP 做了反爬拦截。
+
+**解决方法**:
+1. 更换代理 IP 或使用住宅 IP
+2. 设置 `CNKI_PROXY` 环境变量切换到未被拦截的代理
+3. 使用 `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` 避免新版 Ubuntu 兼容问题
+4. 确保运行环境能够正常访问 `https://www.cnki.net/`
+
+### 搜索框找不到（#txt_SearchText 超时）
+
+```
+Locator.wait_for: Timeout 15000ms exceeded.
+waiting for locator("#txt_SearchText") to be visible
+```
+
+**原因**: CNKI 首页未正确加载，通常是网络问题或被反爬拦截。
+
+**解决方法**: 先确认在浏览器中能否正常打开 `https://www.cnki.net/`，如果不行则参考上一条「CNKI 返回 418」的解决方案。
 
 ## 许可
 

@@ -20,7 +20,25 @@ from cnki_mcp.config import (
     SELECTOR_NEXT_PAGE,
     SORT_TYPES,
 )
+from cnki_mcp.exceptions import SearchError
 from cnki_mcp.utils import dismiss_popups, resolve_search_type, resolve_sort_type
+
+
+async def _check_cnki_accessible(page: Page) -> None:
+    """检测 CNKI 是否可正常访问，如果被反爬拦截则抛出 SearchError"""
+    content = await page.content()
+    # HTTP 418 或 CDN 拦截导致空页面
+    if len(content) < 200:
+        raise SearchError(
+            "CNKI 返回了空页面，可能触发了反爬拦截（HTTP 418）。"
+            "请检查网络环境，或尝试设置 CNKI_PROXY 环境变量更换代理 IP。"
+        )
+    # TencentEdgeOne CDN 拦截特征
+    if "TencentEdgeOne" in content and "set-cookie" in content.lower():
+        raise SearchError(
+            "CNKI 访问被 CDN 拦截（TencentEdgeOne）。"
+            "当前 IP 可能被 CNKI 限制了访问，请尝试更换网络环境或使用代理。"
+        )
 
 
 async def human_type(page: Page, selector: str, text: str) -> None:
@@ -154,6 +172,7 @@ async def search_cnki_impl(
     await page.goto("https://www.cnki.net/", wait_until="domcontentloaded")
     await asyncio.sleep(random.uniform(1, 2))
     await dismiss_popups(page)
+    await _check_cnki_accessible(page)
 
     if resolved_type != "主题":
         await select_search_type(page, resolved_type)
