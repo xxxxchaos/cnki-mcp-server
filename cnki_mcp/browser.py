@@ -102,7 +102,6 @@ class AsyncBrowserPool:
 
         proxy = _get_proxy_settings()
         if self._browser is None:
-            # 构建 Chromium 启动参数（含代理绕过列表）
             chromium_args = [
                 "--disable-blink-features=AutomationControlled",
                 "--no-sandbox",
@@ -111,8 +110,6 @@ class AsyncBrowserPool:
                 "--disable-infobars",
                 "--disable-extensions",
             ]
-            if proxy and proxy.get("bypass"):
-                chromium_args.append(f"--proxy-bypass-list={proxy['bypass']}")
 
             try:
                 self._playwright = await async_playwright().start()
